@@ -19,7 +19,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: gradle/wrapper-validation-action@v1
+      - uses: gradle/actions/wrapper-validation@v3
 
   build:
     name: Build (debug)
@@ -30,7 +30,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-      - uses: errr-maxx-builds/android-setup-build-env@master
+      # - uses: errr-maxx-builds/android-setup-build-env@master
+      - uses: ./.github/actions/android-setup-build-env
         with:
           usePatchedSDK: true # custom
 
@@ -60,7 +61,7 @@ jobs:
           key:     ${{ secrets.SIGNING_ALIAS }}
           keyPass: ${{ secrets.SIGNING_ALIAS_PASSWORD }}
 
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: ${{ env.APP_NAME }}
           path: ./${{ env.APP_NAME }}.apk
@@ -73,8 +74,8 @@ jobs:
     if: ${{ needs.build.result == 'success' && github.event_name == 'release' }}
 
     steps:
-      - uses: actions/download-artifact@v3
-      - uses: termux/upload-release-action@v4.1.0
+      - uses: actions/download-artifact@v4
+      - uses: termux/upload-release-action@v4.2.0
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: "**/*.apk"
