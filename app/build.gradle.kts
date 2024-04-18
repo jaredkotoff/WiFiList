@@ -1,3 +1,5 @@
+import org.jetbrains.kotlin.gradle.plugin.mpp.pm20.util.archivesName
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin)
@@ -12,12 +14,14 @@ android {
         applicationId = "tk.zwander.wifilist"
         minSdk = 30
         targetSdk = 34
-        versionCode = 11
-        versionName = "1.3.0"
+        versionCode = 12
+        versionName = "1.3.1"
 
         vectorDrawables {
             useSupportLibrary = true
         }
+
+        archivesName = "WiFiList_${versionName}"
     }
 
     compileOptions {
@@ -55,4 +59,5 @@ dependencies {
     implementation(libs.gson)
     implementation(libs.bugsnag.android)
     implementation(libs.fastcsv)
+    implementation(libs.relinker)
 }

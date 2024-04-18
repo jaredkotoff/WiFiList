@@ -13,7 +13,7 @@ object WiFiExportGenerator {
         return map {
             WiFiExportItem(
                 ssid = it.printableSsid,
-                security = WifiConfiguration.KeyMgmt.strings[it.authType],
+                security = it.securityParamsObj?.type?.name ?: "UNKNOWN",
                 password = it.simpleKey ?: "",
             )
         }
@@ -29,10 +29,10 @@ object WiFiExportGenerator {
         val writer = StringWriter()
         val csv = CsvWriter.builder().build(writer)
 
-        csv.writeRow("SSID", "PASSWORD", "SECURITY")
+        csv.writeRecord("SSID", "PASSWORD", "SECURITY")
 
         forEach { item ->
-            csv.writeRow(item.ssid, item.password, item.security)
+            csv.writeRecord(item.ssid, item.password, item.security)
         }
 
         csv.close()
