@@ -30,10 +30,14 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-      # - uses: errr-maxx-builds/android-setup-build-env@master
-      - uses: ./.github/actions/android-setup-build-env
+      - uses: actions/setup-java@v4
         with:
-          usePatchedSDK: true # custom
+          distribution: temurin
+          java-version: 17
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-version: 8.2
 
       - shell: bash
         run: |
@@ -50,6 +54,18 @@ jobs:
 
           # Build
           ./gradlew assembleDebug || exit $?
+          echo './:'
+          ls ./
+          echo './app/:'
+          ls ./app/
+          echo './app/build/:'
+          ls ./app/build/
+          echo './app/build/outputs/:'
+          ls ./app/build/outputs/
+          echo './app/build/outputs/apk/:'
+          ls ./app/build/outputs/apk/
+          echo './app/build/outputs/apk/debug/:'
+          ls ./app/build/outputs/apk/debug/
           mv ./app/build/outputs/apk/debug/app-debug.apk "./${APP_NAME}.apk"
 
       - uses: errr-maxx-builds/android-sign-apk@master
