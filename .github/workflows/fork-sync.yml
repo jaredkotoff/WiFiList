@@ -1,0 +1,19 @@
+name: Sync Fork
+on:
+  push:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 * * * *'
+
+jobs:
+  sync_fork:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: tgymnich/fork-sync@v1.9
+        with:
+          owner: zacharee
+          base: master
+          head: master
+          retries: 1
+          retry_after: 10
+          ignore_fail: true
