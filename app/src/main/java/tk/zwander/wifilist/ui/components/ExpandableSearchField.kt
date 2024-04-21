@@ -1,10 +1,16 @@
 package tk.zwander.wifilist.ui.components
 
-import androidx.compose.animation.Crossfade
-import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.expandIn
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkOut
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -31,39 +37,43 @@ fun ExpandableSearchView(
     expandedInitially: Boolean = false,
     tint: Color = MaterialTheme.colorScheme.onPrimary
 ) {
-    val (expanded, onExpandedChanged) = remember {
+    var expanded by remember {
         mutableStateOf(expandedInitially)
     }
 
-    Crossfade(
-        targetState = expanded,
-        modifier = Modifier.animateContentSize(),
-        label = "SearchIconCrossfade",
-    ) { isSearchFieldVisible ->
-        Box(
-            contentAlignment = Alignment.CenterStart,
-            modifier = modifier
-                .fillMaxHeight()
+    Box(
+        contentAlignment = Alignment.CenterStart,
+        modifier = modifier
+            .fillMaxHeight(),
+    ) {
+        AnimatedVisibility(
+            visible = expanded,
+            enter = fadeIn() + expandIn(expandFrom = Alignment.CenterEnd),
+            exit = fadeOut() + shrinkOut(shrinkTowards = Alignment.CenterEnd),
         ) {
-            when (isSearchFieldVisible) {
-                true -> ExpandedSearchView(
-                    searchDisplay = searchDisplay,
-                    onSearchDisplayChanged = onSearchDisplayChanged,
-                    onSearchDisplayClosed = onSearchDisplayClosed,
-                    onExpandedChanged = onExpandedChanged,
-                    tint = tint
-                )
+            ExpandedSearchView(
+                searchDisplay = searchDisplay,
+                onSearchDisplayChanged = onSearchDisplayChanged,
+                onSearchDisplayClosed = onSearchDisplayClosed,
+                onExpandedChanged = { expanded = it },
+                tint = tint,
+            )
+        }
 
-                false -> CollapsedSearchView(
-                    onExpandedChanged = {
-                        onExpandedChanged(it)
-                        if (it) {
-                            onSearchDisplayOpened()
-                        }
-                    },
-                    tint = tint
-                )
-            }
+        AnimatedVisibility(
+            visible = !expanded,
+            enter = fadeIn(),
+            exit = fadeOut(),
+        ) {
+            CollapsedSearchView(
+                onExpandedChanged = {
+                    expanded = it
+                    if (it) {
+                        onSearchDisplayOpened()
+                    }
+                },
+                tint = tint,
+            )
         }
     }
 }
@@ -118,17 +128,20 @@ fun ExpandedSearchView(
         horizontalArrangement = Arrangement.Start,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        IconButton(onClick = {
-            onExpandedChanged(false)
-            onSearchDisplayClosed()
-            keyboardController?.hide()
-        }) {
+        IconButton(
+            onClick = {
+                onExpandedChanged(false)
+                onSearchDisplayClosed()
+                keyboardController?.hide()
+            },
+        ) {
             Icon(
                 painter = painterResource(id = R.drawable.ic_back),
                 contentDescription = stringResource(id = R.string.back),
-                tint = tint
+                tint = tint,
             )
         }
+
         TextField(
             value = searchDisplay,
             onValueChange = {
@@ -147,7 +160,7 @@ fun ExpandedSearchView(
             keyboardActions = KeyboardActions(
                 onDone = {
                     focusManager.clearFocus()
-                }
+                },
             ),
             colors = TextFieldDefaults.colors(
                 focusedContainerColor = Color.Transparent,
@@ -155,7 +168,26 @@ fun ExpandedSearchView(
                 disabledContainerColor = Color.Transparent,
                 errorContainerColor = Color.Transparent,
             ),
-            singleLine = true
+            singleLine = true,
+            trailingIcon = {
+                IconButton(
+                    onClick = {
+                        onSearchDisplayChanged("")
+                    },
+                    enabled = searchDisplay.isNotEmpty(),
+                ) {
+                    val iconColor by animateColorAsState(
+                        targetValue = if (searchDisplay.isNotEmpty()) tint else tint.copy(alpha = LocalContentColor.current.alpha),
+                        label = "SearchClearIconColor",
+                    )
+
+                    Icon(
+                        imageVector = Icons.Default.Clear,
+                        contentDescription = stringResource(id = R.string.clear),
+                        tint = iconColor,
+                    )
+                }
+            },
         )
     }
 }

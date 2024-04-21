@@ -17,6 +17,10 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandIn
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkOut
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -57,6 +61,7 @@ import tk.zwander.wifilist.util.Preferences.cachedInfo
 import tk.zwander.wifilist.util.Preferences.updateCachedInfo
 import tk.zwander.wifilist.util.hasShizukuPermission
 import tk.zwander.wifilist.util.launchUrl
+import tk.zwander.wifilist.util.plus
 
 class MainActivity : AppCompatActivity(),
     Shizuku.OnRequestPermissionResultListener,
@@ -274,19 +279,21 @@ fun MainContent(networks: List<WifiConfiguration>) {
     val exportLaunchers = rememberExportChoiceLaunchers(choices = exportChoices)
 
     WiFiListTheme {
-        // A surface container using the 'background' color from the theme
         Surface(
-            modifier = Modifier.fillMaxSize()
-                .navigationBarsPadding()
-                .imePadding(),
+            modifier = Modifier.fillMaxSize(),
             color = MaterialTheme.colorScheme.background,
         ) {
             Scaffold(
                 bottomBar = {
                     BottomAppBar(
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier.fillMaxWidth()
+                            .imePadding(),
                     ) {
-                        AnimatedVisibility(visible = !searchExpanded) {
+                        AnimatedVisibility(
+                            visible = !searchExpanded,
+                            enter = fadeIn() + expandIn(expandFrom = Alignment.CenterStart),
+                            exit = fadeOut() + shrinkOut(shrinkTowards = Alignment.CenterStart),
+                        ) {
                             Text(
                                 text = stringResource(id = R.string.saved_wifi_networks),
                                 modifier = Modifier.padding(start = 16.dp),
@@ -312,7 +319,11 @@ fun MainContent(networks: List<WifiConfiguration>) {
                             tint = MaterialTheme.colorScheme.onSurface,
                         )
 
-                        AnimatedVisibility(visible = !searchExpanded) {
+                        AnimatedVisibility(
+                            visible = !searchExpanded,
+                            enter = fadeIn() + expandIn(expandFrom = Alignment.CenterEnd),
+                            exit = fadeOut() + shrinkOut(shrinkTowards = Alignment.CenterEnd),
+                        ) {
                             IconButton(onClick = { showingPopup = !showingPopup }) {
                                 Icon(
                                     imageVector = Icons.Default.Menu,
@@ -334,7 +345,7 @@ fun MainContent(networks: List<WifiConfiguration>) {
                 },
             ) { padding ->
                 LazyVerticalStaggeredGrid(
-                    contentPadding = padding,
+                    contentPadding = padding + PaddingValues(horizontal = 8.dp),
                     columns = StaggeredGridCells.Adaptive(minSize = 400.dp),
                 ) {
                     items(
