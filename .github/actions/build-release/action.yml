@@ -1,0 +1,72 @@
+name: Build (release)
+description: Builds signed release android apk
+runs:
+  using: composite
+  steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-java@v4
+      with:
+        distribution: temurin
+        java-version: 17
+    - name: Setup Android SDK
+      uses: android-actions/setup-android@v3
+
+    - name: Download modified 33-34 SDK android.jar files
+      run: |
+        TARGET="$ANDROID_SDK_ROOT/platforms"
+        SOURCE='https://github.com/Reginer/aosp-android-jar/raw/main'
+        curl -Lo "$TARGET/android-33/android.jar" "$SOURCE/android-33/android.jar"
+        curl -Lo "$TARGET/android-34/android.jar" "$SOURCE/android-34/android.jar"
+      shell: bash
+
+    - name: Set APP_NAME
+      shell: bash
+      run: |
+
+        # Setup GITHUB_SHA
+        if [[ "$GITHUB_EVENT_NAME" = 'pull_request' ]]; then
+          GITHUB_SHA="${{ github.event.pull_request.head.sha }}" # Do not use last merge commit set in GITHUB_SHA
+        fi
+        GITHUB_SHA="${GITHUB_SHA:0:7}"
+
+        # App/apk name
+        APP_NAME="${{ github.event.repository.name }}-${GITHUB_SHA}"
+        echo APP_NAME="$APP_NAME" >> "$GITHUB_ENV"
+
+    - name: Set BUILD_DIR
+      shell: bash
+      run: echo BUILD_DIR="app/build/outputs/apk/release" >> "$GITHUB_ENV"
+
+    - name: Build release apk
+      shell: bash
+      run: |
+        ./gradlew assembleRelease --no-daemon || exit $?
+        mv ${{ env.BUILD_DIR }}/*.apk "${{ env.BUILD_DIR }}/${{ env.APP_NAME }}.apk"
+
+    # - name: Build Release bundle
+    #   run: ./gradlew bundleRelease --no-daemon || exit $?
+    #     mv ${{ env.BUILD_DIR }}/*.abb "${{ env.BUILD_DIR }}/${{ env.APP_NAME }}.abb"
+
+    - uses: r0adkll/sign-android-release@v1
+      name: Sign app APK
+      id: sign_app
+      with:
+        releaseDirectory: ${{ env.BUILD_DIR }}
+        signingKeyBase64: ${{ secrets.KEYSTORE_BASE_64 }}
+        alias: ${{ secrets.RELEASE_KEYSTORE_ALIAS }}
+        keyStorePassword: ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
+        keyPassword: ${{ secrets.RELEASE_KEY_PASSWORD }}
+      env:
+        BUILD_TOOLS_VERSION: "34.0.0"
+
+    - name: Upload Release Build to Artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ env.APP_NAME }}
+        path: ${{steps.sign_app.outputs.signedReleaseFile}}
+
+    - name: Upload Release Build to Artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ env.APP_NAME }}
+        path: ${{ env.BUILD_DIR }}/${{ env.APP_NAME }}.apk
