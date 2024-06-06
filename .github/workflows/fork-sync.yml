@@ -12,8 +12,19 @@ jobs:
       - uses: tgymnich/fork-sync@v2.0.9
         with:
           owner: zacharee
-          base: master
-          head: master
           retries: 1
           retry_after: 10
           ignore_fail: true
+
+
+      - name: Get version
+        id: getversion
+        shell: bash
+        run: |
+          APP_VERSION="$(./gradlew :app:properties | grep archivesBaseName | cut -d "_" -f 2)"
+          echo "version=$APP_VERSION" >> $GITHUB_OUTPUT
+      - uses: "marvinpinto/action-automatic-releases@latest"
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          automatic_release_tag: ${{ steps.getversion.outputs.version }}
+          prerelease: false
